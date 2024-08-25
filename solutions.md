@@ -72,7 +72,7 @@ class Solution {
             list.add(str);
             map.put(key, list);
         }
-        return new ArrayList<List<String>>(map.values());
+        return new ArrayList<List<String>>(map.values());//又学到了
     }
 }
 ```
@@ -102,33 +102,30 @@ class Solution {
 
 解：
 
-每个数 *x*，考虑以其为起点，不断尝试匹配 *x*+1,*x*+2,⋯ 是否存在。并且每次在哈希表中检查是否存在 *x*−1 ，判断是否需要跳过。因为如果x-1存在，那么以x为起点就必然会短于以x-1为起点。
+每个数 *x*，考虑以其为起点，不断尝试匹配 *x*+1,*x*+2,⋯ 是否存在。并且**每次在哈希表中检查是否存在 *x*−1** ，判断是否需要跳过。因为如果x-1存在，那么以x为起点就必然会短于以x-1为起点。
 
 ```java
 class Solution {
     public int longestConsecutive(int[] nums) {
-        Set<Integer> num_set = new HashSet<Integer>();
+        //先将元素全部放入set
+        Set<Integer> numSet = new HashSet<Integer>();
         for (int num : nums) {
-            num_set.add(num);
+            numSet.add(num);
         }
 
-        int longestStreak = 0;
-
-        for (int num : num_set) {
-            if (!num_set.contains(num - 1)) {
+        int res = 0;//初始化
+        for (int num : numSet) {
+            if (!numSet.contains(num - 1)) {//如果num-1不存在
                 int currentNum = num;
                 int currentStreak = 1;
-
-                while (num_set.contains(currentNum + 1)) {
-                    currentNum += 1;
-                    currentStreak += 1;
+                while (numSet.contains(currentNum + 1)) {//如果存在currentNum + 1
+                    currentNum ++;
+                    currentStreak ++;
                 }
-
-                longestStreak = Math.max(longestStreak, currentStreak);
+                res = Math.max(res, currentStreak);
             }
         }
-
-        return longestStreak;
+        return res;
     }
 }
 ```
@@ -145,14 +142,14 @@ class Solution {
 
 题目：给定一个数组 `nums`，编写一个函数将所有 `0` 移动到数组的末尾，同时保持非零元素的相对顺序。**请注意** ，必须在不复制数组的情况下原地对数组进行操作。
 
-解：需要注意的就是 j 也要往后移
+解：
 
-方法一：交换
+交换，需要注意的是 j 也要往后移。解释：例如nums=[1, 2, 0]，只有 j 跟着移动了，才不会出错。
 
 ```java
 class Solution {
     public void moveZeroes(int[] nums) {
-        //双指针,i用于遍历,j是其他数后面的第一个"0"的索引位置
+        //双指针,i用于遍历,j是下一个非零元素应该在的位置
         int j=0;
         for(int i=0;i<nums.length;i++){
             //有个缺点，如果本来就“有序”，那么依然会进行交换操作
@@ -192,7 +189,7 @@ if(nums[i]!=0){
 
 **示例 1：**
 
-![image-20240804142141253](https://gwimghost.oss-cn-shanghai.aliyuncs.com/img1/202408041421447.png)
+<img src="https://gwimghost.oss-cn-shanghai.aliyuncs.com/img1/202408041421447.png" alt="image-20240804142141253" style="zoom: 67%;" />
 
 ```
 输入：[1,8,6,2,5,4,8,3,7]
@@ -303,7 +300,7 @@ class Solution {
 
 ## 接雨水
 
-困难
+困难-代码简单
 
 题目：给定 `n` 个非负整数表示每个宽度为 `1` 的柱子的高度图，计算按此排列的柱子，下雨之后能接多少雨水。
 
