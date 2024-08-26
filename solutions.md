@@ -362,7 +362,7 @@ for (int l = 0, r = 0 ; r < n ; r++) {
 
 解：
 
-要熟悉滑动窗口的写法。
+要熟悉滑动窗口的写法。不含有重复字符——>set。滑动窗口也是双指针，考虑极端情况：全是不重复的字符，那么right会指向最后一个字符，但是这个过程是一步一步移过去的，移动过程中，去重，移动 left。
 
 ```java
 class Solution {
@@ -406,7 +406,7 @@ class Solution {
 
 解：
 
-所谓排列可以转化为**串中每个字符的个数都一样，**因为题目中串只包含小写字母，所以可以用一个长度为26的数组来存储字符串中每个字符的个数
+排列——>**串中每个字符的个数都一样，**因为题目中串只包含小写字母，所以可以用一个长度为26的数组来存储字符串中每个字符的个数。Arrays.equals( )，又学到了。
 
 ```java
 class Solution {
@@ -416,7 +416,7 @@ class Solution {
         if(n < m) return res;//如果p比s都长，直接返回
         int[] pCnt = new int[26];
         int[] sCnt = new int[26];
-        for(int i = 0; i < m; i++){
+        for(int i = 0; i < m; i++){// 注意<m
             pCnt[p.charAt(i) - 'a']++;
             sCnt[s.charAt(i) - 'a']++;
         }
@@ -424,7 +424,7 @@ class Solution {
             res.add(0);
         }
         //例如 n=10, m=3。开始滑动
-        for(int i = 0; i < n-m; i++){
+        for(int i = 0; i < n-m; i++){//注意
             sCnt[s.charAt(i) - 'a']--;//去掉左边的
             sCnt[s.charAt(i+m) - 'a']++;//加上右边的
             if(Arrays.equals(sCnt, pCnt)){
@@ -448,7 +448,7 @@ class Solution {
 
 解：
 
-“前缀和”：对于数组中的任何位置 j，前缀和 pre[j] 是数组中从第一个元素到第 j 个元素的总和。将问题转化为求解**两个前缀和之差**等于k的情况。
+“前缀和”：对于数组中的位置 j，前缀和 pre[j] 是数组中从第一个元素到第 j 个元素的总和。将问题转化为求解**两个前缀和之差**等于k的情况。
 
 ```java
 class Solution {
@@ -499,11 +499,13 @@ class Solution {
 
 <img src="https://gwimghost.oss-cn-shanghai.aliyuncs.com/img1/202408042223957.png" alt="image-20240804222347604" style="zoom:50%;" />
 
-维护一个优先队列：[4]——>[4,2]——>[4,3]——>[3,2]，最大值都是left
+维护一个优先队列：[4]——>[4,2]——>[4,3]——>[3,2]，最大值都在队首
 
 注意，这个[4]并不是一开始就得到的，而是[2]——>[2,1]——>[4]。
 
 更要注意的是，队列存储的是下标，不是值！！！因为需要下标去判断这个元素还在不在窗口之内
+
+这些API也要熟悉
 
 ```java
 class Solution {
@@ -516,12 +518,13 @@ class Solution {
             while (!q.isEmpty() && nums[q.getLast()] <= nums[i]) {
                 q.removeLast(); // 维护 q 的单调性
             }
-            q.addLast(i); // 入队
-            // 2. 出，尤其注意
-            if (i - q.getFirst() >= k) { // 队首已经离开窗口了
+            q.addLast(i); 
+            
+            // 2. //队首如果超出窗口范围了
+            if (i - q.getFirst() >= k) { //注意>=
                 q.removeFirst();
             }
-            // 3. 记录答案.得窗口里面的元素都遍历完了再记录答案
+            // 3. 首次记录答案时，需要将窗口里面的元素都遍历完了，再记录答案
             if (i >= k - 1) {
                 // 由于队首到队尾单调递减，所以窗口最大值就是队首
                 ans[i - k + 1] = nums[q.getFirst()];
@@ -550,44 +553,43 @@ class Solution {
 
 解：
 
-枚举 s 子串的右端点 right，如果子串涵盖 t，就不断移动左端点 left 直到不涵盖为止。
+枚举 s 子串的右端点 right，如果子串涵盖 t，就不断移动左端点 left 直到不涵盖为止。代码长，但是逻辑不难。
 
 ```java
 class Solution {
     public String minWindow(String S, String t) {
         char[] s = S.toCharArray();
         int n = s.length;
-        //ansLeft = -1相当于做标记
-        int ansLeft = -1, ansRight = n, left = 0, less = 0;
-        int[] cntS = new int[123], cntT = new int[123]; // s和t 中字母的出现次数
-        // 统计t中每个字符的出现次数，并初始化less
-        for (char c : t.toCharArray()) {
-            if (cntT[c]== 0) {// 如果是第一次见到字符c，less加1
-                less++; 
-            }
-            cntT[c]++;//字母c的个数
+        //大写字母65-90, 小写字母97-122
+        int[] sArr = new int[123], tArr = new int[123];
+        int ansLeft=-1, ansRight=n, l=0;
+
+        //统计t中每种字符的数量,也可以理解为t比窗口中多的字符种类数
+        int charNum = 0;
+        for(char a : t.toCharArray()){
+            if(tArr[a]==0) charNum++;//字符直接当作数字使用
+            tArr[a]++;
         }
-        for (int right = 0; right < n; right++) { // 移动子串右端点，逐渐往右移
-            char c = s[right]; // 右端点字母（移入子串）
-            cntS[c]++;//字母个数++
-            if (cntS[c] == cntT[c]) {
-                less--; // c 的出现次数从 < 变成 >=
+
+        //右端点逐渐往右移
+        for(int r=0;r<n;r++){
+            char ch = s[r];
+            sArr[ch]++;//加入右端点处字符
+            if(sArr[ch]==tArr[ch]){
+                charNum--;
             }
-            // 当所有t中的字符在S的窗口中都至少出现了，则尝试缩小窗口
-            while (less == 0) {
-                if (right - left < ansRight - ansLeft) { // 找到更短的子串
-                    ansLeft = left; // 记录此时的左右端点
-                    ansRight = right;
+            while(charNum==0){//注意是while
+                if(r-l<ansRight-ansLeft){//找到了更短的子串
+                    ansLeft=l;
+                    ansRight=r;
                 }
-                // 缩小窗口，将s[left]从窗口中移除
-                char x = s[left];
-                left++; // 移动左指针
-                if (cntS[x]-- == cntT[x]) {
-                    less++; // x 的出现次数从 >= 变成 <
+                char b = s[l++];//取出窗口最左边的字符,缩小窗口
+                if(sArr[b]-- == tArr[b]){//即使现在相等,但移除之后必然就小于t中的
+                    charNum++;
                 }
             }
         }
-        return ansLeft < 0 ? "" : S.substring(ansLeft, ansRight + 1);
+        return ansLeft>=0 ? S.substring(ansLeft,ansRight+1) : ""; 
     }
 }
 ```
@@ -611,7 +613,7 @@ class Solution {
     public int maxSubArray(int[] nums) {
         int count =0, res = nums[0];
         for(int num:nums){
-            count=Math.max(count+num,num);//当前这一步连续和的最大值
+            count=Math.max(count+num,num);//即count>0 才累加，否则从头开始
             res = Math.max(res, count);// 更新最大和
         }
         return res;
@@ -635,21 +637,18 @@ class Solution {
 
 解：先按照区间左边界进行排序，这样对于两个区间，只需要比较left2和right1即可：
 
-1. 当右边界大于下一个区间的左边界的时候，这两个区间就可以合并了。
-2. 但如果发现右边界小于下一个区间的左边界，则区间就无法继续合并，就需要开辟一个新的区间来继续执行合并的流程。
+1. 当`right1`大于`left2`的时候，这两个区间就可以合并了。
+2. 但如果发现`right1`小于`left2`，则区间就无法继续合并，就需要开辟一个新的区间来继续执行合并的流程。
 
-重点掌握Arrays.sort()如何写，以及列表如何转为数组。
+重点掌握Arrays.sort()如何写，以及列表如何转为数组，`list.toArray()`。
 
 ```java
 class Solution {
     public int[][] merge(int[][] intervals) {
-        if (intervals.length == 0) {
-            return new int[0][2];
-        }
         //Lambda表达式，该函数接受两个int[]类型的参数（interval1和interval2）
         Arrays.sort(intervals, (interval1, interval2) -> interval1[0] - interval2[0]);
-        List<int[]> merged = new ArrayList<int[]>();
-        for (int i = 0; i < intervals.length; ++i) {
+        List<int[]> merged = new ArrayList<>();
+        for (int i = 0; i < intervals.length; i++) {
             int L = intervals[i][0], R = intervals[i][1];
             //新增：刚开始的时候 or 当前数组的L > 列表里面最近添加的数组的R
             if (merged.size() == 0 || L > merged.get(merged.size() - 1)[1]) {
