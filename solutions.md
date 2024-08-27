@@ -1,3 +1,17 @@
+**常用API**
+
+| 序号 | 方法                                    | 功能                    |
+| ---- | --------------------------------------- | ----------------------- |
+| 1    | List<> list = Arrays.asList(res)        | 数组转为列表            |
+| 2    | array = list.toArray(array);            | 列表转为数组            |
+| 3    | char[] charArray = str.toCharArray();   | String转为char[]        |
+| 4    | String str = new String(charArray);     | char[]转为String        |
+|      | String str = String.valueOf(charArray); |                         |
+| 5    | String str = sb.toString();             | StringBuilder转为String |
+|      |                                         |                         |
+
+
+
 # 哈希
 
 ## 两数之和
@@ -734,7 +748,7 @@ class Solution {
 
 ## 除自身以外数组的乘积
 
-中等
+中等——有难度
 
 题目：给你一个整数数组 `nums`，返回 数组 `answer` ，其中 `answer[i]` 等于 `nums` 中除 `nums[i]` 之外其余各元素的乘积 。题目数据 **保证** 数组 `nums`之中任意元素的全部前缀元素和后缀的乘积都在 **32 位** 整数范围内。请 **不要使用除法，**且在 `O(n)` 时间复杂度内完成此题
 
@@ -756,13 +770,15 @@ class Solution {
 class Solution {
     public int[] productExceptSelf(int[] nums) {
         int n = nums.length;
-        int[] pre = new int[n];//下三角
+        int[] pre = new int[n];
         pre[0] = 1;
         for(int i=1;i<n; i++){
-            pre[i] = pre[i-1]*nums[i-1];
+            pre[i] = pre[i-1]*nums[i-1]; //得到pre[0]=1, pre[1]=nums[0],...
         }
         int suf = 1;//后缀数组退化为一个数
-        for(int i=n-2;i>=0;i--){//上三角
+        //suf[n-1]=1,suf[n-2]=nums[n-1],...
+        //但实际上suf[n-1]不需要，保持原来的pre[n-1]就可以了
+        for(int i=n-2;i>=0;i--){//因此从pre[n-2]开始更新
             suf *= nums[i+1];
             pre[i] *= suf;
         }
@@ -771,7 +787,7 @@ class Solution {
 }
 ```
 
-xx
+
 
 ## 缺失的第一个正数
 
@@ -809,27 +825,34 @@ xx
 
 <img src="https://gwimghost.oss-cn-shanghai.aliyuncs.com/img1/202408052241452.png" alt="image-20240805224101043" style="zoom:33%;" />
 
+<img src="https://gwimghost.oss-cn-shanghai.aliyuncs.com/img1/202408272312264.png" alt="image-20240827231247843" style="zoom: 50%;" />
+
+用负号标识【索引+1】这个数是存在的，没有出现的最小正整数介于[1,n+1]。理解：
+
+1. 对数组排个序，如果1到n都有，那么没有出现的最小正整数就是n+1。
+2.  如果1到n有缺失值，那么没有出现的最小正整数会介于[1,n]。综上，介于[1,n+1]
+
 ```java
 class Solution {
     public int firstMissingPositive(int[] nums) {
         int n = nums.length;
-        // 因为要用负号标记，所以先处理掉负数
+        // 0和负数变为n+1
         for (int i = 0; i < n; ++i) {
             if (nums[i] <= 0) {
                 nums[i] = n + 1;
             }
         }
-        // 对于小于n的数，nums[num-1]变为负数,注意-1
+        
         for (int i = 0; i < n; i++) {
             int num = Math.abs(nums[i]);
-            if (num <= n) {
+            if (num <= n) {	// 对1~n中的数进行标记，注意映射到下标要减去1
                 nums[num - 1] = -Math.abs(nums[num - 1]);
             }
         }
-        //找缺失的第一个正数,注意+1
+        // 其实是对1~n这些数进行遍历
         for (int i = 0; i < n; i++) {
             if (nums[i] > 0) {
-                return i + 1;
+                return i + 1;//缺失的第一个正数
             }
         }
         return n + 1;
@@ -866,6 +889,7 @@ class Solution {
                 }
             }
         }
+        //再遍历一遍
         for (int i = 0; i < m; i++) {
             for (int j = 0; j < n; j++) {
                 if (row[i] || col[j]) {
@@ -877,7 +901,9 @@ class Solution {
 }
 ```
 
+就这样性能也很好了
 
+<img src="https://gwimghost.oss-cn-shanghai.aliyuncs.com/img1/202408272342335.png" alt="image-20240827234255867" style="zoom:50%;" />
 
 ## 螺旋矩阵
 
@@ -948,6 +974,10 @@ class Solution {
 
 如果另外开一个数组当然很简单。如果原地，可以使用转置，再左右对称的两列互换。
 
+对于方阵，可以原地转置；对于非方阵，则需要新建一个矩阵。
+
+<img src="https://gwimghost.oss-cn-shanghai.aliyuncs.com/img1/202408280020919.png" alt="image-20240828002042557" style="zoom:33%;" />
+
 ```java
 class Solution {
     public void rotate(int[][] matrix) {
@@ -956,7 +986,7 @@ class Solution {
         
         // 矩阵转置
         for(int i = 0; i < n; i++){
-            for(int j = i + 1; j < n; j++){
+            for(int j = i + 1; j < n; j++){//注意
                 temp = matrix[i][j];
                 matrix[i][j] = matrix[j][i];
                 matrix[j][i] = temp;
@@ -981,7 +1011,7 @@ class Solution {
 
 中等
 
-题目：编写一个高效的算法来搜索 `*m* x *n*` 矩阵 `matrix` 中的一个目标值 `target` 。该矩阵具有以下特性：
+题目：编写一个高效的算法来搜索 `mxn` 矩阵 `matrix` 中的一个目标值 `target` 。该矩阵具有以下特性：
 
 - 每行的元素从左到右升序排列。
 - 每列的元素从上到下升序排列。
@@ -1009,25 +1039,22 @@ class Solution {
 
 - 如果 matrix[x,y]<target，由于每一行的元素都是升序排列的，那么在当前的搜索矩阵中，所有位于第 x 行的元素都是严格小于 target 的，因此我们可以将它们全部忽略，即将 x 增加 1。
 
+在搜索的过程中，如果我们超出了矩阵的边界，那么说明矩阵中不存在 target。注意：此题是无法二分的，与二分查找——>搜索二维矩阵区分开。
 
-在搜索的过程中，如果我们超出了矩阵的边界，那么说明矩阵中不存在 target。
+<img src="https://assets.leetcode.com/uploads/2020/10/05/mat.jpg" alt="img" style="zoom:50%;" />
 
 ```java
 class Solution {
     public boolean searchMatrix(int[][] matrix, int target) {
+        //z字形查找
         int m = matrix.length, n = matrix[0].length;
-        int x = 0, y = n - 1;
-        while (x < m && y >= 0) {
-            if (matrix[x][y] == target) {
-                return true;
-            }
-            if (matrix[x][y] > target) {
-                --y;
-            } else {
-                ++x;
-            }
+        int x = 0, y = n - 1;//初始位置在右上角
+        while(x<m && y>=0){
+            if(matrix[x][y]==target) return true;
+            if(matrix[x][y]>target) y--;
+            else x++;
         }
-        return false;
+        return false; 
     }
 }
 ```
