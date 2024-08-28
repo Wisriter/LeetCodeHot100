@@ -1116,8 +1116,8 @@ class Solution {
         while(cur != null) {
             ListNode tmp = cur.next; // 暂存后继节点 cur.next
             cur.next = pre;          // 修改 next 引用指向
-            pre = cur;               // pre 暂存 cur
-            cur = tmp;               // cur 访问下一节点
+            pre = cur;               // 更新 pre 
+            cur = tmp;               // 移到原本的next节点
         }
         return pre;
     }
@@ -1194,53 +1194,41 @@ class Solution {
 ```java
 class Solution {
     public boolean isPalindrome(ListNode head) {
-        if (head == null) {
-            return true;
+        // 快慢指针找中点
+        ListNode slow = head, fast = head;
+        while (fast.next != null && fast.next.next != null) {
+            slow = slow.next;
+            fast = fast.next.next;
+        }
+        ListNode mid = slow;
+        ListNode c = reverse(mid.next);//反转后半部分
+        ListNode d = head;//前半部分
+        boolean res = true;
+
+        //判断
+        while (c != null) {
+            if (c.val != d.val) {
+                res = false;
+                break;
+            }
+            c = c.next;//
+            d = d.next;
         }
 
-        // 找到前半部分链表的尾节点并反转后半部分链表
-        ListNode firstHalfEnd = endOfFirstHalf(head);
-        ListNode secondHalfStart = reverseList(firstHalfEnd.next);
-
-        // 判断是否回文
-        ListNode p1 = head;
-        ListNode p2 = secondHalfStart;
-        boolean result = true;
-        while (result && p2 != null) {
-            if (p1.val != p2.val) {
-                result = false;
-            }
-            p1 = p1.next;
-            p2 = p2.next;
-        }        
-
-        // 还原链表并返回结果
-        firstHalfEnd.next = reverseList(secondHalfStart);
-        return result;
+        slow.next = reverse(mid.next);//注意！！反转并重新建立连接
+        return res;
     }
 
-    //反装链表
-    private ListNode reverseList(ListNode head) {
-        ListNode prev = null;
-        ListNode curr = head;
+    // 反转链表
+    private ListNode reverse(ListNode head) {
+        ListNode prev = null, curr = head;
         while (curr != null) {
-            ListNode nextTemp = curr.next;
+            ListNode temp = curr.next;//必须先暂存
             curr.next = prev;
             prev = curr;
-            curr = nextTemp;
+            curr = temp;
         }
         return prev;
-    }
-
-    //中点位置
-    private ListNode endOfFirstHalf(ListNode head) {
-        ListNode fast = head;
-        ListNode slow = head;
-        while (fast.next != null && fast.next.next != null) {
-            fast = fast.next.next;
-            slow = slow.next;
-        }
-        return slow;
     }
 }
 ```
@@ -1281,7 +1269,7 @@ class Solution {
 class Solution {
     public boolean hasCycle(ListNode head) {
         ListNode slow = head, fast = head; // 乌龟和兔子同时从起点出发
-        while (fast != null && fast.next != null) {
+        while (fast != null && fast.next != null) {//注意条件
             slow = slow.next; // 乌龟走一步
             fast = fast.next.next; // 兔子走两步
             if (fast == slow) // 兔子追上乌龟（套圈），说明有环
@@ -1410,13 +1398,18 @@ class Solution {
 
 从低位开始，要考虑进位的问题。此外，还要注意如果最后还有进位，那么需要追加一个节点。
 
+1. 获取值，相加，更新head和tail
+2. 计算进位
+3. 移动节点
+4. 循环结束后如果进位>0，追加一个节点
+
 ```java
 class Solution {
     public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
         ListNode head = null, tail = null;
         int carry = 0;//进位，初值为0
         while (l1 != null || l2 != null) {
-            int n1 = (l1 != null) ? l1.val : 0;
+            int n1 = (l1 != null) ? l1.val : 0;//关键
             int n2 = (l2 != null) ? l2.val : 0;
             int sum = n1 + n2 + carry;
             if (head == null) {//if只会进入一次,节点值是进位(如果有的话)之后，留下来的值
