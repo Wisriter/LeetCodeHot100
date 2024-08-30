@@ -1454,18 +1454,18 @@ class Solution {
 
 解：
 
-遍历一遍，得到链表的长度，再找到该节点，设置pre.next = node.next。可以设置一个哑节点，在head前创建一个新的节点，这样做可以避免讨论头结点被删除的情况，不管原来的head有没有被删除，直接返回dummy.next即可。
+遍历一遍，得到链表的长度，再找到该节点，设置cur.next = cur.next.next。可以在head前创建一个哑节点，这样做可以避免讨论头结点被删除的情况，不管原来的head有没有被删除，直接返回dummy.next即可。
 
 ```java
 class Solution {
     public ListNode removeNthFromEnd(ListNode head, int n) {
         ListNode dummy = new ListNode(0, head);//哑节点值为0，指向头节点
         int length = getLength(head);
-        ListNode cur = dummy;//从哑节点开始
+        ListNode cur = dummy;//注意! 从哑节点开始
         for (int i = 1; i < length - n + 1; i++) {
             cur = cur.next;
         }
-        cur.next = cur.next.next;
+        cur.next = cur.next.next;//如果只有一个节点且被删，哑节点会指向null
         ListNode ans = dummy.next;
         return ans;
     }
@@ -1473,7 +1473,7 @@ class Solution {
     public int getLength(ListNode head) {
         int length = 0;
         while (head != null) {
-            ++length;
+            length++;
             head = head.next;
         }
         return length;
@@ -1491,7 +1491,7 @@ class Solution {
 
 解：
 
-递归。1-->2-->3。交换1，2：2.next = 1, 但是1.next不一定是3。对后面的节点需要用递归。
+递归。1-->2-->3。交换1，2：2.next = 1, 但是1.next不一定是3。对后面的节点需要用递归。反正就记住，递归就是把未知当已知。
 
 终止条件：节点为空或者节点的下一个节点为空。比如说，当只有三个节点时，那么第三个节点.next = null，直接返回它即可。当只有两个节点时，第三个节点本身就是null，让1.next=null也没毛病。
 
@@ -1504,7 +1504,7 @@ class Solution {
         ListNode three = two.next;
 
         two.next = one;
-        one.next = swapPairs(three);
+        one.next = swapPairs(three);//假设后面的节点已经交换好
         return two;
     }
 }
@@ -1529,46 +1529,44 @@ class Solution {
 
 解：
 
+分组反转，需要用到哑节点，非常需要注意的是，ListNode pre = hair 是引用传递，指向同一个对象，这也是hair的指向为什么可以改变的原因。reverse()：之前题目《反转链表》是null(pre) -> head -> ... -> null
+    //现在是                head -> ... -> tail -> tail.next
+    //反转之后是tail.next <- head <- ... <- tail
+    //也就是reverse把后面的连接已经弄好了（看箭头，不要看上面的前后位置）
+
 ```java
 class Solution {
     public ListNode reverseKGroup(ListNode head, int k) {
+        //哑节点
         ListNode hair = new ListNode(0);
         hair.next = head;
-        ListNode pre = hair;
+        ListNode pre = hair;//最开始pre就在hair位置
 
-        while (head != null) {
-            ListNode tail = pre;
-            // 查看剩余部分长度是否大于等于 k
-            for (int i = 0; i < k; ++i) {
+        while(head!=null){
+            ListNode tail = pre;//注意
+            for(int i=0;i<k;i++){
                 tail = tail.next;
-                if (tail == null) {
-                    return hair.next;
-                }
+                if(tail==null) return hair.next;
             }
-            ListNode nex = tail.next;
-            ListNode[] reverse = myReverse(head, tail);
-            head = reverse[0];
-            tail = reverse[1];
-            // 把子链表重新接回原链表
-            pre.next = head;
-            tail.next = nex;
+            ListNode[] headAndTail = reverse(head,tail);
+            head = headAndTail[0];
+            tail = headAndTail[1];
+            pre.next = head;//前面的连接。第一次时就可以改变hair的指向
             pre = tail;
             head = tail.next;
         }
-
         return hair.next;
     }
-
-    public ListNode[] myReverse(ListNode head, ListNode tail) {
-        ListNode prev = tail.next;
-        ListNode p = head;
-        while (prev != tail) {
-            ListNode nex = p.next;
-            p.next = prev;
-            prev = p;
-            p = nex;
+	//反转链表，后面的连接已弄好
+    private ListNode[] reverse(ListNode head, ListNode tail){
+        ListNode pre = tail.next, cur = head;
+        while(pre!=tail){
+            ListNode temp = cur.next;
+            cur.next = pre;
+            pre = cur;
+            cur = temp;
         }
-        return new ListNode[]{tail, head};
+        return new ListNode[]{tail,head};
     }
 }
 ```
@@ -1591,19 +1589,17 @@ class Solution {
 
 如果是普通链表，可以直接按照遍历的顺序创建链表节点。而本题中因为随机指针的存在，当我们拷贝节点时，「当前节点的随机指针指向的节点」可能还没创建。
 
-递归，使用map存储旧-新键值对，表示这个节点的新节点是否创建好了，如果没有创建，就要递归地去进行创建。
+递归，使用map存储旧-新节点对，表示这个节点的新节点是否创建好了，如果没有创建，就要递归地去进行创建。
 
 ```java
 class Solution {
     Map<Node, Node> cachedNode = new HashMap<Node, Node>();
     public Node copyRandomList(Node head) {
-        if (head == null) {
-            return null;
-        }
+        if (head == null) return null;//注意
         if (!cachedNode.containsKey(head)) {
             Node headNew = new Node(head.val);
-            cachedNode.put(head, headNew);//存储旧-新键值对
-            headNew.next = copyRandomList(head.next);
+            cachedNode.put(head, headNew);//存储旧-新节点
+            headNew.next = copyRandomList(head.next);//注意
             headNew.random = copyRandomList(head.random);
         }
         return cachedNode.get(head);
@@ -1623,65 +1619,52 @@ class Solution {
 
 解：
 
-归并排序可以满足时间和空间复杂度要求。
+归并排序。注意断开连接后，再对left, right 分别排序，最后合并。
 
 ```java
 class Solution {
-    public ListNode sortList(ListNode head) {
-        return sortList(head,null);
-    }
-
     //归并排序
-    public ListNode sortList(ListNode head,ListNode tail){
-        //节点为空的时候返回
-        if(head == null){
-            return head;
-        }
-        //只有一个节点的时候返回
-        if(head.next == tail){
-            //拆分节点，这个地方要拆分为单个节点，所以这里必须要让next为空，否则就不是单个节点
-            head.next = null;
-            return head;
-        }
-        //找中点，快慢指针，快指针走两步，慢指针一步，快的的时候，慢的就是中点
-        ListNode slow = head;
-        ListNode fast = head;
-        while(fast!=tail){
-            slow = slow.next;
-            fast = fast.next;
-            if(fast!=tail){
-                fast = fast.next;
-            }
-        }
-        ListNode midNode = slow;//中间节点
-        //链表现在分为head->midNode,midNode->tail两个链表
-        ListNode node1 = sortList(head,midNode);
-        ListNode node2 = sortList(midNode,tail);
-        //合并,按照两个有序链表的方式合并
-        return mergeListNode(node1,node2);
+    public ListNode sortList(ListNode head) {
+        return sort(head);
+    }
+    //将节点排序好，并返回头节点
+    private ListNode sort(ListNode head){
+        if(head==null || head.next==null) return head;//单个节点直接返回
+        ListNode mid = findMid(head);//寻找中点
+        ListNode l=head, r=mid.next;//前半部分,后半部分的开始
+        mid.next = null;//断开连接
+        ListNode l2 = sort(l);
+        ListNode r2 = sort(r);
+        return merge(l2, r2);
     }
 
-    //合并两个有序列表
-    public ListNode mergeListNode(ListNode node1, ListNode node2){
-        ListNode dummyListNode = new ListNode(Integer.MIN_VALUE);
-        ListNode node = dummyListNode;
-        ListNode temp1 = node1,temp2 = node2;
-        while(temp1 != null && temp2 != null){
-            if(temp1.val <= temp2.val){
-                node.next = temp1;
-                temp1 = temp1.next;
-            }else{
-                node.next = temp2;
-                temp2 = temp2.next;
+    //找中点
+    private ListNode findMid(ListNode head){
+        ListNode f = head,s=head;
+        while(f.next!=null && f.next.next!=null){//注意
+            f = f.next.next;
+            s = s.next;
+        }
+        return s;
+    }
+
+    //合并两个有序链表
+    private ListNode merge(ListNode headA, ListNode headB){
+        ListNode dummy = new ListNode(0);
+        ListNode tail = dummy;//浅拷贝,作用是node可以更新，同时dummy得以保持在原来的位置
+        while(headA!=null && headB!=null){
+            if(headA.val<headB.val){
+                tail.next = headA;
+                headA = headA.next;
             }
-            node = node.next;
+            else{
+                tail.next = headB;
+                headB = headB.next;
+            }
+            tail = tail.next;
         }
-        if(temp1 != null){
-            node.next = temp1;
-        }else if(temp2 != null){
-            node.next = temp2;
-        }
-        return dummyListNode.next;
+        tail.next = (headA!=null)? headA:headB;
+        return dummy.next;
     }
 }
 ```
@@ -1706,35 +1689,35 @@ class Solution {
         return mergeKLists(lists, 0, lists.length);
     }
 
-    // 合并从 lists[i] 到 lists[j-1] 的链表
+    // 递归合并从 lists[i] 到 lists[j-1] 的链表
     private ListNode mergeKLists(ListNode[] lists, int i, int j) {
-        int m = j - i;
-        if (m == 0) return null; // 注意输入的 lists 可能是空的
-        if (m == 1) return lists[i]; // 无需合并，直接返回
-        ListNode left = mergeKLists(lists, i, i + m / 2); // 合并左半部分
-        ListNode right = mergeKLists(lists, i + m / 2, j); // 合并右半部分
-        return mergeTwoLists(left, right); // 最后把左半和右半合并
+        int m = j-i;//链表数量
+        if(m==0) return null;
+        if(m==1) return lists[i];
+        ListNode a = mergeKLists(lists,i,i+m/2);//排序前/后半部分
+        ListNode b = mergeKLists(lists,i+m/2,j);
+        return merge(a,b);
     }
 
-    // 21. 合并两个有序链表
-    private ListNode mergeTwoLists(ListNode list1, ListNode list2) {
-        ListNode dummy = new ListNode(); // 用哨兵节点简化代码逻辑
-        ListNode cur = dummy; // cur 指向新链表的末尾
-        while (list1 != null && list2 != null) {
-            if (list1.val < list2.val) {
-                cur.next = list1; // 把 list1 加到新链表中
-                list1 = list1.next;
-            } else { // 注：相等的情况加哪个节点都是可以的
-                cur.next = list2; // 把 list2 加到新链表中
-                list2 = list2.next;
+    // 合并两个有序链表
+    private ListNode merge(ListNode headA, ListNode headB){
+        ListNode dummy = new ListNode(0);
+        ListNode tail = dummy;//浅拷贝,作用是node可以更新，同时dummy得以保持在原来的位置
+        while(headA!=null && headB!=null){
+            if(headA.val<headB.val){
+                tail.next = headA;
+                headA = headA.next;
             }
-            cur = cur.next;
+            else{
+                tail.next = headB;
+                headB = headB.next;
+            }
+            tail = tail.next;
         }
-        cur.next = list1 != null ? list1 : list2; // 拼接剩余链表
+        tail.next = (headA!=null)? headA:headB;
         return dummy.next;
     }
 }
-//作者：灵茶山艾府
 ```
 
 
@@ -1779,7 +1762,7 @@ lRUCache.get(4);    // 返回 4
 
 实现本题的两种操作，需要用到一个哈希表和一个双向链表。在面试中，面试官一般会期望读者能够自己实现一个简单的双向链表，而不是使用语言自带的、封装好的数据结构。
 
-方法一：使用封装好的LinkedHashMap。
+方法一：使用封装好的LinkedHashMap。没怎么看懂
 
 ```java
 class LRUCache extends LinkedHashMap<Integer, Integer>{
@@ -1807,96 +1790,87 @@ class LRUCache extends LinkedHashMap<Integer, Integer>{
 
 方法二：哈希表 + 双向链表。
 
-- 双向链表按照被使用的顺序存储了这些键值对，靠近头部的键值对是最近使用的，而靠近尾部的键值对是最久未使用的。
+- 双向链表靠近头部的键值对是最近使用的，靠近尾部的键值对是最久未使用的。
 
-- 哈希表即为普通的哈希映射（HashMap），通过缓存数据的键映射到其在双向链表中的位置。
+- map = {键, 装有值的节点}
 
 在双向链表的实现中，使用一个伪头部（dummy head）和伪尾部（dummy tail）标记界限，这样在添加节点和删除节点的时候就不需要检查相邻的节点是否存在。
 
 ```java
-public class LRUCache {
-    //定义一个链表节点类
-    class DLinkedNode {
-        int key;
+class LRUCache extends LinkedHashMap<Integer, Integer> {
+    // 定义一个链表节点类
+    class LinkedNode {
+        int key;//必须要有key属性，因为删除节点时要同时删除map键值对
         int value;
-        DLinkedNode prev;
-        DLinkedNode next;
-        public DLinkedNode() {}
-        public DLinkedNode(int _key, int _value) {key = _key; value = _value;}
+        LinkedNode prev;
+        LinkedNode next;
+        public LinkedNode(){};//无参构造器
+        public LinkedNode(int key, int value){//有参构造器
+            this.key = key;
+            this.value = value;
+        }
     }
 
-    //key是关键字, value是链表节点, 节点的值才是真正存储的值
-    private Map<Integer, DLinkedNode> cache = new HashMap<Integer, DLinkedNode>();
-    private int size;
-    private int capacity;
-    private DLinkedNode head, tail;
+    // LRU类的一些属性
+    private Map<Integer, LinkedNode> map = new HashMap<>();
+    private int capacity;// 容量
+    private LinkedNode head, tail;// 链表头尾
 
-    public LRUCache(int capacity) {
-        this.size = 0;
+    public LRUCache(int capacity) {// 构造器
         this.capacity = capacity;
-        // 使用伪头部和伪尾部节点
-        head = new DLinkedNode();
-        tail = new DLinkedNode();
+        head = new LinkedNode();// head和tail都是哑节点
+        tail = new LinkedNode();
         head.next = tail;
         tail.prev = head;
     }
 
     public int get(int key) {
-        DLinkedNode node = cache.get(key);
-        if (node == null) {
+        if (!map.containsKey(key))
             return -1;
-        }
-        // 如果 key 存在，先通过哈希表定位，再移到头部
+        LinkedNode node = map.get(key);// 找到节点
         moveToHead(node);
         return node.value;
     }
 
     public void put(int key, int value) {
-        DLinkedNode node = cache.get(key);
-        if (node == null) {
-            // 如果 key 不存在，创建一个新的节点
-            DLinkedNode newNode = new DLinkedNode(key, value);
-            // 添加进哈希表
-            cache.put(key, newNode);
-            // 添加至双向链表的头部
-            addToHead(newNode);
-            ++size;
-            if (size > capacity) {
-                // 如果超出容量，删除双向链表的尾部节点
-                DLinkedNode tail = removeTail();
-                // 删除哈希表中对应的项
-                cache.remove(tail.key);
-                --size;
+        LinkedNode node = map.get(key);
+        if (node == null) {//如果之前没有
+            LinkedNode newNode = new LinkedNode(key, value);
+            map.put(key, newNode);
+            addHead(newNode);
+            if (map.size() > capacity) {
+                LinkedNode tail = delTail();
+                map.remove(tail.key);// 这里就用到key
             }
-        }
+        } 
         else {
-            // 如果 key 存在，先通过哈希表定位，再修改 value，并移到头部
             node.value = value;
             moveToHead(node);
         }
     }
 
-    private void addToHead(DLinkedNode node) {
+    // 4个对节点的操作
+    private void moveToHead(LinkedNode node) {// 移到头部
+        delNode(node);
+        addHead(node);
+    }
+
+    private LinkedNode delTail() {// 删去尾部节点,有返回值，因为要删去map
+        LinkedNode res = tail.prev;
+        delNode(res);
+        return res;
+    }
+
+    private void addHead(LinkedNode node) {// 添加节点到头部
         node.prev = head;
         node.next = head.next;
         head.next.prev = node;
         head.next = node;
     }
 
-    private void removeNode(DLinkedNode node) {
+    private void delNode(LinkedNode node) {// 移除一个节点
         node.prev.next = node.next;
         node.next.prev = node.prev;
-    }
-
-    private void moveToHead(DLinkedNode node) {
-        removeNode(node);
-        addToHead(node);
-    }
-
-    private DLinkedNode removeTail() {
-        DLinkedNode res = tail.prev;
-        removeNode(res);
-        return res;
     }
 }
 ```
