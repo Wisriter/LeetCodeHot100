@@ -1918,7 +1918,9 @@ class Solution {
 }
 ```
 
-方法二：迭代
+方法二：
+
+迭代。自己画棵二叉树就很好理解了。
 
 ```java
 class Solution {
@@ -1956,13 +1958,11 @@ class Solution {
 ```java
 class Solution {
     public int maxDepth(TreeNode root) {
-        if (root == null) {
-            return 0;
-        } else {
-            int leftHeight = maxDepth(root.left);
-            int rightHeight = maxDepth(root.right);
-            return Math.max(leftHeight, rightHeight) + 1;
-        }
+        //递归
+        if(root==null) return 0;
+        int l = maxDepth(root.left);//左边最大深度
+        int r = maxDepth(root.right);
+        return Math.max(l,r)+1;
     }
 }
 ```
@@ -2122,20 +2122,17 @@ public boolean isSymmetric2(TreeNode root) {
 
 ```java
 class Solution {
-    int ans;
+    int res=1;//节点数量
     public int diameterOfBinaryTree(TreeNode root) {
-        ans = 1;
-        depth(root);
-        return ans - 1;
+        dfs(root);
+        return res-1;//边的数量
     }
-    public int depth(TreeNode node) {
-        if (node == null) {
-            return 0; // 访问到空节点了，返回0
-        }
-        int L = depth(node.left); // 左儿子为根的子树的深度
-        int R = depth(node.right); // 右儿子为根的子树的深度
-        ans = Math.max(ans, L+R+1); // 计算d_node即L+R+1 并更新ans
-        return Math.max(L, R) + 1; // 返回该节点为根的子树的深度
+    private int dfs(TreeNode root){
+        if(root==null) return 0;
+        int l = dfs(root.left);
+        int r = dfs(root.right);
+        res = Math.max(res,l+r+1);//更新路径
+        return Math.max(l,r)+1;
     }
 }
 ```
@@ -2155,30 +2152,23 @@ class Solution {
 ```java
 class Solution {
     public List<List<Integer>> levelOrder(TreeNode root) {
-        List<List<Integer>> ret = new ArrayList<List<Integer>>();
-        if (root == null) {
-            return ret;
-        }
-
-        Queue<TreeNode> queue = new LinkedList<TreeNode>();
-        queue.offer(root);//根节点先入队
-        while (!queue.isEmpty()) {
-            List<Integer> level = new ArrayList<Integer>();
-            int currentLevelSize = queue.size();//获取一层的队列长度
-            for (int i = 1; i <= currentLevelSize; ++i) {
+        List<List<Integer>> res = new ArrayList<>();
+        if(root==null) return res;
+        Deque<TreeNode> queue = new LinkedList<>();
+        queue.offer(root);
+        while(!queue.isEmpty()){
+            int len = queue.size();//当前层的宽度
+            List<Integer> list = new ArrayList<>();
+            while(len>0){
                 TreeNode node = queue.poll();
-                level.add(node.val);
-                if (node.left != null) {
-                    queue.offer(node.left);
-                }
-                if (node.right != null) {
-                    queue.offer(node.right);
-                }
+                list.add(node.val);
+                if(node.left!=null) queue.offer(node.left);
+                if(node.right!=null) queue.offer(node.right);
+                len--;
             }
-            ret.add(level);
+            res.add(list);
         }
-        
-        return ret;
+        return res;
     }
 }
 ```
@@ -2210,28 +2200,49 @@ class Solution {
 
 ## 将有序数组转换为二叉搜索树
 
-简单
+简单——中等
 
 题目：给你一个整数数组 `nums` ，其中元素已经按 **升序** 排列，请你将其转换为一棵 平衡 二叉搜索树。
 
 解：
 
-二叉搜索树的中序遍历是升序序列，因此题目给的有序数组是二叉搜索树的中序遍历。注意：给定二叉搜索树的中序遍历，不能唯一地确定二叉搜索树。我们构造一个平衡的二叉树即可（“平衡”是指左右子树的数字个数相同或只相差 1），当节点个数为偶数时，取len/2，或len/2 + 1为中间节点都行。这里取len/2
+二叉搜索树的中序遍历是升序序列，因此题目给的有序数组是二叉搜索树的中序遍历。注意：给定二叉搜索树的中序遍历，不能唯一地确定二叉搜索树。我们构造一个平衡的二叉树即可（“平衡”是指左右子树的数字个数相同或只相差 1），当节点个数为偶数时，取len/2，或len/2 + 1为中间节点都行，这里取len/2。
+
+尤其注意区间的开闭性，二分的left和right如何更新
+
+左闭右开：
 
 ```java
 class Solution {
     public TreeNode sortedArrayToBST(int[] nums) {
-        return helper(nums, 0, nums.length - 1);
+        return binaryTree(nums, 0, nums.length);//
     }
-
-    public TreeNode helper(int[] nums, int left, int right) {
-        if (left > right) {
-            return null;
-        }
-        int mid = (left + right) / 2;
+    //左闭右开
+    private TreeNode binaryTree(int[] nums, int l, int r){
+        if(l >= r) return null;//
+        int mid = l+(r-l)/2;
         TreeNode root = new TreeNode(nums[mid]);
-        root.left = helper(nums, left, mid - 1);
-        root.right = helper(nums, mid + 1, right);
+        root.left = binaryTree(nums, l, mid);//
+        root.right = binaryTree(nums, mid+1, r);
+        return root;
+    }
+}
+```
+
+左闭右闭：
+
+```java
+class Solution {
+    public TreeNode sortedArrayToBST(int[] nums) {
+        return binaryTree(nums, 0, nums.length-1);//
+    }
+    //左闭右闭
+    private TreeNode binaryTree(int[] nums, int l, int r){
+        if(l > r) return null;//
+        int mid = l+(r-l)/2;
+        TreeNode root = new TreeNode(nums[mid]);
+        root.left = binaryTree(nums, l, mid-1);//
+        root.right = binaryTree(nums, mid+1, r);
         return root;
     }
 }
