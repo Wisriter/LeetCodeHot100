@@ -2266,23 +2266,21 @@ class Solution {
 
 方法一：中序遍历，再判断数组是否严格递增即可，略
 
-方法二：递归判断每个节点是否满足
+方法二：更像先序遍历？代码并不好理解。注意min和max在递归遍历左右子树时进行了更新。
 
 ```java
 class Solution {
     public boolean isValidBST(TreeNode root) {
-        return isValidBST(root, Long.MIN_VALUE, Long.MAX_VALUE);//考虑对于一个节点的情况
+        return isEr(root, Long.MIN_VALUE, Long.MAX_VALUE);//初始值
     }
-
-    public boolean isValidBST(TreeNode node, long lower, long upper) {
-        if (node == null) {
+    public static boolean isEr(TreeNode root,long min,long max){
+        if(root==null){
             return true;
         }
-        if (node.val <= lower || node.val >= upper) {
-            return false;
-        }
-        return isValidBST(node.left, lower, node.val) && isValidBST(node.right, node.val, upper);
-    }
+        long cur = root.val;
+        //当前节点，左子树，右子树
+        return cur>min && cur<max && isEr(root.left,min,cur) && isEr(root.right,cur,max);
+  }
 }
 ```
 
@@ -2296,7 +2294,7 @@ class Solution {
 
 解：
 
-二叉树的中序遍历即按照访问左子树——根结点——右子树的方式遍历二叉树；在访问其左子树和右子树时，我们也按照同样的方式遍历；直到遍历完整棵树。使用层序遍历好计数。
+中序遍历的迭代形式。
 
 ```java
 class Solution {
@@ -2336,16 +2334,15 @@ class Solution {
     public List<Integer> rightSideView(TreeNode root) {
         List<Integer> ans = new ArrayList<>();
         if (root == null) return ans;
-        Queue<TreeNode> q = new LinkedList<>();
+        Deque<TreeNode> q = new LinkedList<>();
         q.offer(root);
-        int count;
         while (!q.isEmpty()) {
-            count = q.size();//每层的节点数量
-            for (int i = 0; i < count; i++) {
+            int len = q.size();
+            while(len>0) {
                 TreeNode node = q.poll();
                 if (node.left != null) q.offer(node.left);
                 if (node.right != null) q.offer(node.right);
-                if (i == count - 1) ans.add(node.val);
+                if (len--==1) ans.add(node.val);//先比较再减1
             }
         }
         return ans;
@@ -2388,9 +2385,20 @@ class Solution {
 - 展开后的单链表应该同样使用 `TreeNode` ，其中 `right` 子指针指向链表中下一个结点，而左子指针始终为 `null` 。
 - 展开后的单链表应该与二叉树 [**先序遍历**](https://baike.baidu.com/item/先序遍历/6442839?fr=aladdin) 顺序相同。
 
+**示例 1：**
+
+<img src="https://assets.leetcode.com/uploads/2021/01/14/flaten.jpg" alt="img" style="zoom:50%;" />
+
+```
+输入：root = [1,2,5,3,4,null,6]
+输出：[1,null,2,null,3,null,4,null,5,null,6]
+```
+
 解：
 
-先先序遍历，再构造元素为TreeNode的链表即可
+方法一：先序遍历，再构造元素为TreeNode的链表即可
+
+方法二：原地操作，空间复杂度O(1)，没看见好理解的代码
 
 ```java
 class Solution {
@@ -2423,6 +2431,8 @@ class Solution {
 
 解：
 
+原理说明：由先序遍历可以告诉我们中间节点，由中序遍历可以定位到这个中间节点，它的左边就是左子树，右边就是右子树。对左右子树进行这样的递归操作。后序遍历同理
+
 基本步骤：
 
 1. haspmap存储中序遍历元素和位置的对应关系map.put(inorder[i], i)
@@ -2435,28 +2445,26 @@ class Solution {
 ```java
 class Solution {
     Map<Integer, Integer> map;
+    int[] preorder,inorder;//全局变量简化一下代码
     public TreeNode buildTree(int[] preorder, int[] inorder) {
+        // 存储节点值对应的中序位置
         map = new HashMap<>();
-        for (int i = 0; i < inorder.length; i++) { // key=节点值, value=索引位置
+        for (int i = 0; i < inorder.length; i++) { 
             map.put(inorder[i], i);
         }
-
-        return findNode(preorder, 0, preorder.length, inorder,  0, inorder.length);  // 左闭右开
+        this.preorder = preorder;
+        this.inorder = inorder;
+        return findNode(0,preorder.length,0,inorder.length);//左闭右开
     }
 
-    public TreeNode findNode(int[] preorder, int preBegin, int preEnd, int[] inorder, int inBegin, int inEnd) {
-        // 参数里的范围都是前闭后开
-        if (preBegin >= preEnd || inBegin >= inEnd) {  // 不满足左闭右开，说明没有元素，返回空树
-            return null;
-        }
-        int rootIndex = map.get(preorder[preBegin]);  // 找到前序遍历的第一个元素在中序遍历中的位置
-        TreeNode root = new TreeNode(inorder[rootIndex]);  // 构造结点
-        int lenOfLeft = rootIndex - inBegin;  // 保存中序左子树个数，用来确定前序数列的个数
-        root.left = findNode(preorder, preBegin + 1, preBegin + lenOfLeft + 1,
-                            inorder, inBegin, rootIndex);
-        root.right = findNode(preorder, preBegin + lenOfLeft + 1, preEnd,
-                            inorder, rootIndex + 1, inEnd);
-
+    public TreeNode findNode(int preBegin, int preEnd, int inBegin, int inEnd) {
+        if(preBegin>=preEnd || inBegin>=inEnd) return null;
+        int rootIndex = map.get(preorder[preBegin]);//中间节点的位置
+        TreeNode root = new TreeNode(inorder[rootIndex]);
+        int leftLen = rootIndex-inBegin;//左子树节点数
+        //注意先序遍历的左右子树分界值
+        root.left = findNode(preBegin+1, preBegin+leftLen+1, inBegin, rootIndex);
+        root.right = findNode(preBegin+leftLen+1, preEnd, rootIndex+1, inEnd);
         return root;
     }
 }
